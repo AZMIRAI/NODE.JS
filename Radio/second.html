@@ -1,0 +1,122 @@
+
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KBS 1 라디오</title>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<style>
+
+@media screen and (min-width: 480px) {
+    #button {
+        width:480px;
+        height:200px;
+    }
+    #video {
+        width:480px;
+        height:75px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    #button {
+        width:100%;
+        height:200px;
+    }
+    #video {
+        width:100%;
+        height:75px;
+    }
+}
+
+        </style>
+</head>
+<body>
+<button id="button" onclick="playpause()">
+KBS 1 라디오<br><br>라디오 재생하기<br>스마트폰에서는 화면을 꺼도 재생됩니다
+</button>
+<br>
+<video id="video" controls></video>
+<script>
+
+var video = document.getElementById('video');
+var videoSrcOrigin = 'https://1radio.gscdn.kbs.co.kr/1radio_192_1.m3u8?Expires=1622706247&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly8xcmFkaW8uZ3NjZG4ua2JzLmNvLmtyLzFyYWRpb18xOTJfMS5tM3U4IiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNjIyNzA2MjQ3fX19XX0_&Signature=AvV750FNdWimG-it5jilZ~a9VW-wmN03XIH-aOHhXRVRl8yUuLOrE2kJiYkEi8z0FYBf1pE6-3AmyyEAhwELHnRv~j~-iTUQ7ZXaHOShRDl5U3dIM0PwE6Rv7Iw~fdHqqRIzPVZKYg~1Yx7FxTS~l1xZWt37raK~kXPlfOISb78ePWD9hT~oKT5snjIvYc1sxCy-i2RNsm9kFoKKrQnul0vgK3zJCYS-WDaLa7wrO0scpV3KWb7uoIpOm-rDabeyeNVo8LrIymznTFXHMhK1S0z6cied4~4yuFEBHd~3~AJFBgds-lzswsHdk7RTf-dP3u66PPb2ZN8qmFcebcFLLA__&Key-Pair-Id=APKAICDSGT3Y7IXGJ3TA';
+var videoSrc = [ videoSrcOrigin ];
+if ( !(/^https?:\/\/cors.korradio.stream/i.test(videoSrcOrigin)) ) {
+	if ( /^http:/i.test(videoSrcOrigin) ) {
+		videoSrc.push(videoSrcOrigin.replace(/^http:/i,'https:'));
+	}
+	videoSrc.push('//cors.korradio.stream/' + videoSrcOrigin);
+}
+var videoSrcOffset = 0;
+
+if (Hls.isSupported()) {
+    var hls = new Hls();
+    hls.loadSource(videoSrc[videoSrcOffset]);
+    hls.attachMedia(video);
+    hls.on(Hls.Events.MANIFEST_PARSED, function() {
+        video.play();
+    });
+	
+	hls.on(Hls.Events.ERROR, function (event, data) {
+		var errorType = data.type;
+		var errorDetails = data.details;
+		var errorFatal = data.fatal;
+		
+		if(errorFatal) {
+			switch(errorType) {
+				case Hls.ErrorTypes.NETWORK_ERROR:
+					switch(errorDetails) {
+						case Hls.ErrorDetails.MANIFEST_LOAD_ERROR:
+						case Hls.ErrorDetails.MANIFEST_LOAD_TIMEOUT:
+						case Hls.ErrorDetails.MANIFEST_PARSING_ERROR:
+							if(videoSrcOffset < videoSrc.length) {
+								videoSrcOffset += 1;
+							}
+						    hls.loadSource(videoSrc[videoSrcOffset]);
+							hls.attachMedia(video);	
+							break;
+						default:
+							console.log("fatal network error encountered, try to recover");
+							hls.startLoad();
+							break;
+					}
+					break;
+				case Hls.ErrorTypes.MEDIA_ERROR:
+					console.log("fatal media error encountered, try to recover");
+					hls.recoverMediaError();
+					break;
+				default:
+				// cannot recover
+					hls.destroy();
+					break;
+			}
+		}
+	});
+}
+
+else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    video.src = videoSrc[videoSrcOffset];
+    video.addEventListener('loadedmetadata', function() {
+        video.play();
+    });
+	video.addEventListener('error', function() {
+		if(videoSrcOffset < videoSrc.length) {
+			videoSrcOffset += 1;
+		}
+		video.src = videoSrc[videoSrcOffset];
+	});
+}
+
+function playpause(){
+    var video = document.getElementById('video');
+    if (video.paused==true) {
+        video.play();
+    } else {
+        video.pause();
+    }
+}
+
+        </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"rayId":"6586d2c0fe4e1d77","version":"2021.5.2","r":1,"token":"9873456f151047908edcd15abd16f941","si":10}'></script>
+</body>
+</html>
